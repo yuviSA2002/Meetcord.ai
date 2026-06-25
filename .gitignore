@@ -1,0 +1,19 @@
+*.iml
+.gradle
+/local.properties
+/.idea/
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+gradle-8.5/
+
+# Module-specific
+app/build/
+*/build/
+
+# Ignore large AI models
+*.bin
+*.bin.jar
