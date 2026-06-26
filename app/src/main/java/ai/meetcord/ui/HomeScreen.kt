@@ -98,33 +98,7 @@ fun HomeScreen() {
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // AI Model Selector Carousel
-            val selectedModel by ai.meetcord.llm.AiModelSelector.selectedModel.collectAsState()
-            androidx.compose.foundation.lazy.LazyRow(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.Center
-            ) {
-                items(ai.meetcord.llm.AiModelSelector.availableModels.size) { index ->
-                    val model = ai.meetcord.llm.AiModelSelector.availableModels[index]
-                    val isSelected = model == selectedModel
-                    androidx.compose.material3.Card(
-                        modifier = Modifier
-                            .padding(horizontal = 4.dp)
-                            .clickable { ai.meetcord.llm.AiModelSelector.selectModel(model) },
-                        colors = androidx.compose.material3.CardDefaults.cardColors(
-                            containerColor = if (isSelected) Color(0xFFFFFFFF) else Color(0xFF111111)
-                        ),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
-                    ) {
-                        Text(
-                            text = model,
-                            color = if (isSelected) Color.Black else Color.White,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
-            }
+            // AI Model Selector removed from HomeScreen
 
             // Waveform takes up the middle space
             Box(
@@ -274,15 +248,7 @@ fun HomeScreen() {
                             ) {
                                 when (recordingState) {
                                     RecordingState.IDLE -> {
-                                        val model = selectedModel
-                                        if (model == "ChatGPT-4o" && ai.meetcord.settings.SettingsManager.openAiKey.value.isBlank()) {
-                                            scope.launch { snackbarHostState.showSnackbar("OpenAI API Key not found! Please add it in Settings.") }
-                                        } else if (model == "Claude 3.5" && ai.meetcord.settings.SettingsManager.anthropicKey.value.isBlank()) {
-                                            scope.launch { snackbarHostState.showSnackbar("Anthropic API Key not found! Please add it in Settings.") }
-                                        } else if (model == "Gemini Pro" && ai.meetcord.settings.SettingsManager.geminiKey.value.isBlank()) {
-                                            scope.launch { snackbarHostState.showSnackbar("Gemini API Key not found! Please add it in Settings.") }
-                                        } else {
-                                            val captureMode = ai.meetcord.settings.SettingsManager.audioCaptureMode.value
+                                        val captureMode = ai.meetcord.settings.SettingsManager.audioCaptureMode.value
                                             if (captureMode == ai.meetcord.settings.AudioCaptureMode.INTERNAL_MEDIA_ONLY || captureMode == ai.meetcord.settings.AudioCaptureMode.INTERNAL_MEDIA_AND_MIC) {
                                                 val intent = Intent(context, ai.meetcord.audio.TransparentProjectionActivity::class.java)
                                                 context.startActivity(intent)
@@ -296,7 +262,6 @@ fun HomeScreen() {
                                                 ai.meetcord.asr.WhisperEngine.clear()
                                                 RecordingManager.startRecording()
                                             }
-                                        }
                                     }
                                     RecordingState.RECORDING -> RecordingManager.pauseRecording()
                                     RecordingState.PAUSED -> RecordingManager.startRecording()
@@ -355,7 +320,7 @@ fun HomeScreen() {
                                     transcriptJson = com.google.gson.Gson().toJson(ai.meetcord.asr.WhisperEngine.wordsFlow.value),
                                     summary = "",
                                     actionItems = "",
-                                    aiModelUsed = selectedModel
+                                    aiModelUsed = ""
                                 )
                                 val newId = db.meetingDao().insertMeeting(entity)
                                 

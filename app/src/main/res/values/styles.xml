@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Meetcord" parent="android:Theme.DeviceDefault.NoActionBar">
+        <!-- Base theme, fallback for < API 31 -->
+    </style>
+</resources>

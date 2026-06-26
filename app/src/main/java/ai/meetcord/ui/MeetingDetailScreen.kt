@@ -68,6 +68,7 @@ fun MeetingDetailScreen(meetingId: Int, onBack: () -> Unit) {
 
     val openAiKey by ai.meetcord.settings.SettingsManager.openAiKey.collectAsState()
     val geminiKey by ai.meetcord.settings.SettingsManager.geminiKey.collectAsState()
+    val anthropicKey by ai.meetcord.settings.SettingsManager.anthropicKey.collectAsState()
 
     val pagerState = rememberPagerState(pageCount = { 2 })
 
@@ -412,20 +413,62 @@ fun MeetingDetailScreen(meetingId: Int, onBack: () -> Unit) {
                                 if (isGeneratingAI) {
                                     BrainBulbLoader()
                                 } else {
-                                    val hasKey = openAiKey.isNotBlank() || geminiKey.isNotBlank()
-                                    if (!hasKey) {
-                                        Text("Please add an OpenAI or Gemini API key in Settings to generate insights.", color = Color(0xFFEF4444))
-                                    } else {
-                                        Button(
-                                            onClick = {
-                                                isGeneratingAI = true
-                                                scope.launch {
-                                                    try {
-                                                        val provider = if (openAiKey.isNotBlank()) "OpenAI" else "Gemini"
-                                                        val key = if (openAiKey.isNotBlank()) openAiKey else geminiKey
-                                                        
-                                                        // Reconstruct raw transcript from Words safely
-                                                        if (meeting!!.transcriptJson.isBlank() || meeting!!.transcriptJson == "[]") {
+                                    // AI Model Selector Carousel
+                                    val selectedModel by ai.meetcord.llm.AiModelSelector.selectedModel.collectAsState()
+                                    androidx.compose.foundation.lazy.LazyRow(
+                                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                                        horizontalArrangement = Arrangement.Center
+                                    ) {
+                                        items(ai.meetcord.llm.AiModelSelector.availableModels.size) { index ->
+                                            val model = ai.meetcord.llm.AiModelSelector.availableModels[index]
+                                            val isSelected = model == selectedModel
+                                            androidx.compose.material3.Card(
+                                                modifier = Modifier
+                                                    .padding(horizontal = 4.dp)
+                                                    .clickable { ai.meetcord.llm.AiModelSelector.selectModel(model) },
+                                                colors = androidx.compose.material3.CardDefaults.cardColors(
+                                                    containerColor = if (isSelected) Color(0xFFFFFFFF) else Color(0xFF222222)
+                                                ),
+                                                shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
+                                            ) {
+                                                Text(
+                                                    text = model,
+                                                    color = if (isSelected) Color.Black else Color.White,
+                                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                                    fontWeight = FontWeight.SemiBold
+                                                )
+                                            }
+                                        }
+                                    }
+
+                                    Button(
+                                        onClick = {
+                                            isGeneratingAI = true
+                                            scope.launch {
+                                                try {
+                                                    val selModel = ai.meetcord.llm.AiModelSelector.selectedModel.value
+                                                    val provider = when (selModel) {
+                                                        "ChatGPT-4o" -> "OpenAI"
+                                                        "Claude 3.5" -> "Anthropic"
+                                                        "Gemini Pro" -> "Gemini"
+                                                        else -> "Gemini"
+                                                    }
+                                                    val key = when (provider) {
+                                                        "OpenAI" -> openAiKey
+                                                        "Anthropic" -> anthropicKey
+                                                        "Gemini" -> geminiKey
+                                                        else -> geminiKey
+                                                    }
+                                                    if (key.isBlank()) {
+                                                        withContext(Dispatchers.Main) {
+                                                            android.widget.Toast.makeText(context, "$provider API Key not found! Please add it in Settings.", android.widget.Toast.LENGTH_SHORT).show()
+                                                            isGeneratingAI = false
+                                                        }
+                                                        return@launch
+                                                    }
+                                                    
+                                                    // Reconstruct raw transcript from Words safely
+                                                    if (meeting!!.transcriptJson.isBlank() || meeting!!.transcriptJson == "[]") {
                                                             withContext(Dispatchers.Main) {
                                                                 android.widget.Toast.makeText(context, "No transcript available to summarize.", android.widget.Toast.LENGTH_SHORT).show()
                                                                 isGeneratingAI = false
@@ -475,7 +518,6 @@ fun MeetingDetailScreen(meetingId: Int, onBack: () -> Unit) {
                                         ) {
                                             Text("Generate Summary & Speakers", color = Color.Black, fontWeight = FontWeight.Bold)
                                         }
-                                    }
                                 }
                             } else {
                                 // Display Summary
@@ -519,6 +561,22 @@ fun MeetingDetailScreen(meetingId: Int, onBack: () -> Unit) {
                                 
                                 Spacer(modifier = Modifier.height(16.dp))
                                 Text("Model Used: ${meeting!!.aiModelUsed}", color = Color.Gray, fontSize = 12.sp)
+
+                                Spacer(modifier = Modifier.height(24.dp))
+                                Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Button(
+                                        onClick = {
+                                            val updatedMeeting = meeting!!.copy(summary = "", actionItems = "", aiModelUsed = "")
+                                            meeting = updatedMeeting
+                                            scope.launch(Dispatchers.IO) {
+                                                db.meetingDao().updateMeeting(updatedMeeting)
+                                            }
+                                        },
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1CB5E0))
+                                    ) {
+                                        Text("Retry Summary Generation", color = Color.White, fontWeight = FontWeight.Bold)
+                                    }
+                                }
                             }
                             
                             Spacer(modifier = Modifier.height(32.dp))

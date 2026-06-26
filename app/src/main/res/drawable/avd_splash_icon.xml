@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/ic_splash_icon">
+    <target
+        android:name="brain_part_1"
+        android:animation="@animator/brain_color_anim" />
+    <target
+        android:name="brain_part_2"
+        android:animation="@animator/brain_color_anim" />
+</animated-vector>
