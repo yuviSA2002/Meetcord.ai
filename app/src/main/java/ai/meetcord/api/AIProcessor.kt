@@ -58,9 +58,7 @@ object AIProcessor {
             $numberedTranscript
         """.trimIndent()
 
-        val jsonString = CloudLLMClient.generateSummaryAndDiarization(provider, apiKey, prompt) ?: return null
-        
-        try {
+        val jsonString = CloudLLMClient.generateSummaryAndDiarization(provider, apiKey, prompt) ?: throw RuntimeException("Empty response from LLM")
             // Clean markdown if LLM accidentally included it
             val cleanJson = jsonString.replace("```json", "").replace("```", "").trim()
             val resultObj = JSONObject(cleanJson)
@@ -82,10 +80,6 @@ object AIProcessor {
             }
             
             return ProcessResult(summary, actionItems, wordTimestamps)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            return null
-        }
     }
 }
 

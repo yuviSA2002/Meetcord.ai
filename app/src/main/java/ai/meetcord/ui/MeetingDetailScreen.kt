@@ -21,6 +21,8 @@ import androidx.compose.material.icons.filled.FastForward
 import androidx.compose.material.icons.filled.FastRewind
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.outlined.Lightbulb
+import androidx.compose.material.icons.outlined.Psychology
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
@@ -31,7 +33,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.animation.core.animateFloat
+import androidx.compose.ui.unit.sp
+import androidx.compose.animation.core.*
+import androidx.compose.ui.graphics.*
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.draw.clip
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
@@ -289,7 +295,7 @@ fun MeetingDetailScreen(meetingId: Int, onBack: () -> Unit) {
                                 item {
                                     if (isRetranscribing) {
                                         Column(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                            Text("Deep AI Offline Transcription running...", color = Color.Gray, fontWeight = FontWeight.SemiBold)
+                                            BrainBulbLoader(text = "Deep AI Offline Transcription running...")
                                             Spacer(modifier = Modifier.height(8.dp))
                                             Text("Tokens Extracted: ${retranscribedWords.size}", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                         }
@@ -404,8 +410,7 @@ fun MeetingDetailScreen(meetingId: Int, onBack: () -> Unit) {
                             
                             if (meeting!!.summary.isBlank()) {
                                 if (isGeneratingAI) {
-                                    CircularProgressIndicator(color = Color(0xFFFFFFFF))
-                                    Text("Analyzing meeting...", color = Color.Gray, modifier = Modifier.padding(top = 8.dp))
+                                    BrainBulbLoader()
                                 } else {
                                     val hasKey = openAiKey.isNotBlank() || geminiKey.isNotBlank()
                                     if (!hasKey) {
@@ -415,26 +420,55 @@ fun MeetingDetailScreen(meetingId: Int, onBack: () -> Unit) {
                                             onClick = {
                                                 isGeneratingAI = true
                                                 scope.launch {
-                                                    val provider = if (openAiKey.isNotBlank()) "OpenAI" else "Gemini"
-                                                    val key = if (openAiKey.isNotBlank()) openAiKey else geminiKey
-                                                    
-                                                    // Reconstruct raw transcript from Words
-                                                    val words = Gson().fromJson(meeting!!.transcriptJson, Array<WordTimestamp>::class.java).toList()
-                                                    val rawText = words.joinToString(" ") { it.text }
-                                                    
-                                                    val result = ai.meetcord.api.AIProcessor.processMeetingWithAI(provider, key, rawText, words)
-                                                    
-                                                    if (result != null) {
-                                                        val updatedMeeting = meeting!!.copy(
-                                                            summary = result.summary,
-                                                            actionItems = result.actionItems,
-                                                            transcriptJson = Gson().toJson(result.alignedTimestamps),
-                                                            aiModelUsed = provider
-                                                        )
-                                                        db.meetingDao().updateMeeting(updatedMeeting)
-                                                        meeting = updatedMeeting
+                                                    try {
+                                                        val provider = if (openAiKey.isNotBlank()) "OpenAI" else "Gemini"
+                                                        val key = if (openAiKey.isNotBlank()) openAiKey else geminiKey
+                                                        
+                                                        // Reconstruct raw transcript from Words safely
+                                                        if (meeting!!.transcriptJson.isBlank() || meeting!!.transcriptJson == "[]") {
+                                                            withContext(Dispatchers.Main) {
+                                                                android.widget.Toast.makeText(context, "No transcript available to summarize.", android.widget.Toast.LENGTH_SHORT).show()
+                                                                isGeneratingAI = false
+                                                            }
+                                                            return@launch
+                                                        }
+                                                        
+                                                        val wordsArray = Gson().fromJson(meeting!!.transcriptJson, Array<WordTimestamp>::class.java)
+                                                        if (wordsArray == null || wordsArray.isEmpty()) {
+                                                            withContext(Dispatchers.Main) {
+                                                                android.widget.Toast.makeText(context, "Transcript is empty.", android.widget.Toast.LENGTH_SHORT).show()
+                                                                isGeneratingAI = false
+                                                            }
+                                                            return@launch
+                                                        }
+                                                        val words = wordsArray.toList()
+                                                        val rawText = words.joinToString(" ") { it.text }
+                                                        
+                                                        val result = ai.meetcord.api.AIProcessor.processMeetingWithAI(provider, key, rawText, words)
+                                                        
+                                                        if (result != null) {
+                                                            val updatedMeeting = meeting!!.copy(
+                                                                summary = result.summary,
+                                                                actionItems = result.actionItems,
+                                                                transcriptJson = Gson().toJson(result.alignedTimestamps),
+                                                                aiModelUsed = provider
+                                                            )
+                                                            db.meetingDao().updateMeeting(updatedMeeting)
+                                                            meeting = updatedMeeting
+                                                        } else {
+                                                            withContext(Dispatchers.Main) {
+                                                                android.widget.Toast.makeText(context, "AI Processing failed. Check your API key.", android.widget.Toast.LENGTH_LONG).show()
+                                                            }
+                                                        }
+                                                    } catch (e: Throwable) {
+                                                        android.util.Log.e("MEETCORD_FATAL", "Full Exception:", e)
+                                                        e.printStackTrace()
+                                                        withContext(Dispatchers.Main) {
+                                                            android.widget.Toast.makeText(context, "Fatal Error: ${e.javaClass.simpleName} - ${e.message}", android.widget.Toast.LENGTH_LONG).show()
+                                                        }
+                                                    } finally {
+                                                        isGeneratingAI = false
                                                     }
-                                                    isGeneratingAI = false
                                                 }
                                             },
                                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFFFFF))
@@ -532,5 +566,84 @@ fun MeetingDetailScreen(meetingId: Int, onBack: () -> Unit) {
                 containerColor = Color(0xFF111111)
             )
         }
+    }
+}
+
+@Composable
+fun BrainBulbLoader(text: String = "AI is thinking...") {
+    val infiniteTransition = rememberInfiniteTransition()
+    val fillRatio by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1500, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        )
+    )
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.padding(top = 16.dp)
+    ) {
+        Box(
+            modifier = Modifier.size(72.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            // Unfilled outline
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Icon(
+                    imageVector = Icons.Outlined.Lightbulb,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    tint = Color.DarkGray.copy(alpha = 0.4f)
+                )
+                Icon(
+                    imageVector = Icons.Outlined.Psychology,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(0.5f).padding(top = 8.dp),
+                    tint = Color.DarkGray.copy(alpha = 0.4f)
+                )
+            }
+            
+            // Filled portion, clipped from bottom safely
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .drawWithContent {
+                        val fillHeight = size.height * fillRatio
+                        val topOffset = size.height - fillHeight
+                        clipRect(top = topOffset) {
+                            this@drawWithContent.drawContent()
+                        }
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                val pulseColor = androidx.compose.ui.graphics.lerp(
+                    start = Color(0xFF00C6FF), // Cyan
+                    stop = Color(0xFFFF007F),  // Magenta
+                    fraction = fillRatio
+                )
+                
+                Icon(
+                    imageVector = Icons.Outlined.Lightbulb,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    tint = pulseColor
+                )
+                Icon(
+                    imageVector = Icons.Outlined.Psychology,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(0.5f).padding(top = 8.dp),
+                    tint = pulseColor
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+        Text(
+            text = text,
+            color = Color.Cyan.copy(alpha = 0.8f),
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Bold
+        )
     }
 }
