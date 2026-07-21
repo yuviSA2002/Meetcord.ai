@@ -314,7 +314,7 @@ fun MeetingDetailScreen(meetingId: Int, onBack: () -> Unit) {
                                                             // CRITICAL FIX: Release and re-initialize the engine to clear the C++ KV Cache!
                                                             // Without this, feeding a massive new audio file crashes whisper.cpp via SIGABRT.
                                                             ai.meetcord.asr.WhisperEngine.release()
-                                                            val modelPath = java.io.File(context.cacheDir, "ggml-base.en.bin").absolutePath
+                                                            val modelPath = java.io.File(context.cacheDir, ai.meetcord.BuildConfig.WHISPER_MODEL).absolutePath
                                                             ai.meetcord.asr.WhisperEngine.initialize(modelPath)
                                                             ai.meetcord.asr.WhisperEngine.clear()
 

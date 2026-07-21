@@ -46,6 +46,21 @@ android {
         }
     }
 
+    flavorDimensions += "version"
+    productFlavors {
+        create("lite") {
+            dimension = "version"
+            applicationIdSuffix = ".lite"
+            resValue("string", "app_name", "Meetcord.ai Lite")
+            buildConfigField("String", "WHISPER_MODEL", "\"ggml-base.en.bin\"")
+        }
+        create("pro") {
+            dimension = "version"
+            resValue("string", "app_name", "Meetcord.ai")
+            buildConfigField("String", "WHISPER_MODEL", "\"ggml-small.en-q5_1.bin\"")
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -64,6 +79,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.8"

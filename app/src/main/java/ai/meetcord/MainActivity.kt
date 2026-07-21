@@ -80,9 +80,9 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun copyModelFromAssets(): String {
-        val modelFile = java.io.File(cacheDir, "ggml-base.en.bin")
+        val modelFile = java.io.File(cacheDir, BuildConfig.WHISPER_MODEL)
         if (!modelFile.exists()) {
-            assets.open("ggml-base.en.bin").use { inputStream ->
+            assets.open(BuildConfig.WHISPER_MODEL).use { inputStream ->
                 java.io.FileOutputStream(modelFile).use { outputStream ->
                     inputStream.copyTo(outputStream)
                 }
