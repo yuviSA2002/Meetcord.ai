@@ -1,10 +1,10 @@
 <div align="center">
   <img src="app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.webp" alt="Meetcord Logo" width="120" />
   <h1>Meetcord.ai</h1>
-  <p><b>100% Offline, Privacy-First AI Meeting Summarizer for Android.</b></p>
+  <p><b>AI Meeting Transcriber & Summarizer for Android.</b></p>
 </div>
 
-Meetcord is an entirely offline Android application designed to record, transcribe, and summarize your meetings without ever sending your audio to the cloud. By leveraging C++ bindings for [Whisper.cpp](https://github.com/ggerganov/whisper.cpp) and locally hosted Language Models (LLMs), Meetcord guarantees that your sensitive conversations stay right where they belong—on your device.
+Meetcord is an Android application designed to record, transcribe, and summarize your meetings. It leverages C++ bindings for [Whisper.cpp](https://github.com/ggerganov/whisper.cpp) to run the transcription engine entirely on your device. For summarization, it connects to Cloud LLMs using your own API keys (OpenAI/Gemini).
 
 ---
 
@@ -18,9 +18,8 @@ Meetcord is an entirely offline Android application designed to record, transcri
 
 ## ✨ Features
 
-- **100% Offline Processing:** No internet connection required. No cloud APIs. Total privacy.
-- **Flawless Transcription:** Powered by Whisper.cpp natively running via JNI.
-- **Smart Summarization:** Extracts key points and action items using local AI models.
+- **On-Device Transcription:** Flawless transcription powered by Whisper.cpp natively running via JNI directly on your phone.
+- **Cloud Summarization:** Extracts key points and action items using your own API keys (OpenAI, Gemini).
 - **Product Flavors (Lite vs. Pro):** Easily compile the blazing-fast `Base` model or the highly accurate `Quantized Small` model.
 - **Unlimited Recording:** Processes audio in 30-second sliding windows, meaning it can transcribe 1-hour+ meetings without crashing or overflowing RAM.
 - **Modern UI:** Built fully in Jetpack Compose with Material 3 styling and dynamic animations.
