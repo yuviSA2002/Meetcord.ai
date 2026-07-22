@@ -17,3 +17,7 @@ app/build/
 # Ignore large AI models
 *.bin
 *.bin.jar
+
+# Ignore debug logs
+*.txt
+*.log
