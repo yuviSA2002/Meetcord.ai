@@ -8,7 +8,7 @@ Meetcord is an Android application designed to record, transcribe, and summarize
 
 ---
 
-## 📸 Screenshots
+## Screenshots
 
 | Home Screen | Recording | Meeting Summary |
 | :---: | :---: | :---: |
@@ -16,7 +16,7 @@ Meetcord is an Android application designed to record, transcribe, and summarize
 
 ---
 
-## ✨ Features
+## Features
 
 - **On-Device Transcription:** Flawless transcription powered by Whisper.cpp natively running via JNI directly on your phone.
 - **Cloud Summarization:** Extracts key points and action items using your own API keys (OpenAI, Gemini).
@@ -26,7 +26,7 @@ Meetcord is an Android application designed to record, transcribe, and summarize
 
 ---
 
-## 🛠️ How to Build & Run Locally
+## How to Build & Run Locally
 
 Due to GitHub's file size limits, the large AI models are ignored via `.gitignore` and are not included in this repository. You must download them manually before compiling the app.
 
@@ -63,7 +63,7 @@ Meetcord uses Android **Product Flavors** to juggle the different models.
 
 ---
 
-## 🏗️ Tech Stack
+## Tech Stack
 
 - **UI:** Jetpack Compose, Material 3
 - **Language:** Kotlin & C++
@@ -72,6 +72,6 @@ Meetcord uses Android **Product Flavors** to juggle the different models.
 
 ---
 
-## 📜 License
+## License
 
 This project is open-source. Feel free to fork, modify, and build upon it!
